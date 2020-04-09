@@ -82,7 +82,11 @@ function getConversations(userid){
 }
 
 function getOffline(userId){
-    https.get('https://poasana.000webhostapp.com/api/getoffline.php?id='+userId);
+    try{
+        https.get('https://poasana.000webhostapp.com/api/getoffline.php?id='+userId);
+    }catch(ex){
+        console.log("error--", ex);
+    }    
 }
 
 io.on("connection", socket =>{
@@ -95,15 +99,17 @@ io.on("connection", socket =>{
 
     socket.on("disconnect", async () =>{
         try{
-            // for(var attributename in allUsers){
-            //     console.log(allUsers[attributename].isOnline+": "+allUsers[attributename].socket+"..."+socket.id);
-            //     if(allUsers[attributename].isOnline==1 && allUsers[attributename].socket === socket.id){
-            //         getOffline(allUsers[attributename].userId);
-            //         allUsers[attributename].isOnline = 0;
-            //         console.log("Updated for user--", allUsers[attributename].userId);
-            //         break;
-            //     }
-            // }
+            for(var attributename in allUsers){
+                console.log(allUsers[attributename].isOnline+": "+allUsers[attributename].socket+"..."+socket.id);
+                if(allUsers[attributename].isOnline==1 && allUsers[attributename].socket === socket.id){
+                    getOffline(allUsers[attributename].userId);
+                    allUsers[attributename].isOnline = 0;
+                    console.log("Updated for user--", allUsers[attributename].userId);
+                    users1 = Object.values(allUsers);
+                    io.emit("action",{type:"users_online", data: users1});
+                    break;
+                }
+            }
             
             delete users[socket.id];
             // console.log("All done1111");
@@ -185,6 +191,19 @@ io.on("connection", socket =>{
                         conversationId: cId
                     }}
                 );
+            break;
+            case "server/logout":
+                for(var attributename in allUsers){
+                    console.log(allUsers[attributename].isOnline+": "+allUsers[attributename].socket+"..."+socket.id);
+                    if(allUsers[attributename].isOnline==1 && allUsers[attributename].socket === socket.id){
+                        getOffline(allUsers[attributename].userId);
+                        allUsers[attributename].isOnline = 0;
+                        console.log("Updated for user--", allUsers[attributename].userId);
+                        users1 = Object.values(allUsers);
+                        io.emit("action",{type:"users_online", data: users1});
+                        break;
+                    }
+                }
             break;
         }   
     })
