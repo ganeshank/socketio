@@ -8,79 +8,6 @@ var users1 = {};
 var allUsers = {};
 var conversation = {};
 
-function createUserAvatarUrl(){
-    const rand1 = Math.round(Math.random() * 200 + 100);
-    const rand2 = Math.round(Math.random() * 200 + 100);
-    return `https://placeimg.com/${rand1}/${rand2}/any`;
-}
-
-function isEmpty(obj) {
-    for(var key in obj) {
-        if(obj.hasOwnProperty(key))
-            return false;
-    }
-    return true;
-}
-
-function createUsersOnline(){
-    console.log(users);
-    const values = Object.values(users);
-    const onlyWithUsername = values.filter(u => u.username != undefined);
-    return onlyWithUsername;
-}
-
-function getAllRegisteredUsers(username, socket){
-    return new Promise((resolve, reject) => {
-        https.get('https://poasana.000webhostapp.com/api/getallusers.php?user='+username+'&socket='+socket, (resp) => {
-            let data = '';
-
-            // A chunk of data has been recieved.
-            resp.on('data', (chunk) => {
-                data += chunk;
-            });
-
-            // The whole response has been received. Print out the result.
-            resp.on('end', () => {
-                //console.log("data--", data);
-                resolve(data.toString());
-            });
-
-            resp.on('error', function(err) {
-                // Second reject
-                console.log("Error----",err)
-               // reject(err);
-            });
-
-        })
-    });
-}
-
-function getConversations(userid){
-    return new Promise((resolve, reject) => {
-        https.get('https://poasana.000webhostapp.com/api/getchat.php?id='+userid, (resp) => {
-            let data = '';
-
-            // A chunk of data has been recieved.
-            resp.on('data', (chunk) => {
-                data += chunk;
-            });
-
-            // The whole response has been received. Print out the result.
-            resp.on('end', () => {
-                //console.log("data--", data);
-                resolve(data.toString());
-            });
-
-            resp.on('error', function(err) {
-                // Second reject
-                console.log("Error----",err)
-               // reject(err);
-            });
-
-        })
-    });
-}
-
 function getOffline(userId){
     try{
         https.get('https://poasana.000webhostapp.com/api/getoffline.php?id='+userId);
@@ -92,10 +19,8 @@ function getOffline(userId){
 io.on("connection", socket =>{
     console.log("A user connected!");
     console.log(socket.id);
-    console.log("allUsers--", allUsers);
     users[socket.id] = { userId: uuidv1() };
-
-    
+    socket.emit("action", {type: "socket_update", data: socket.id});    
 
     socket.on("disconnect", async () =>{
         try{
@@ -131,31 +56,30 @@ io.on("connection", socket =>{
                 // console.log("Get join event", allUsers[action.data]);
 
                 // const response = await getAllRegisteredUsers(action.data);
-                // allUsers = JSON.parse(response);
-                // users1 = Object.values(allUsers);
+                // allUsers = JSON.parse(action.data.allUsers);
+                allUsers = action.data.allUsers;
+                users1 = Object.values(action.data.allUsers);
                 io.emit("action",{type:"users_online", data: users1});
-                socket.emit("action", {type: "self_user", data: allUsers[action.data]});
+                socket.emit("action", {type: "self_user", data: action.data.selfUser});
                 // io.emit vs socket.emit (io used when distribute to all and socket for current user only)
                 break;                
             case "server/private_message":
                 const conversationId = action.data.conversationId;  
-                const conversationName = action.data.conversationName;               
-                const from = conversationName;
-                const userValues = Object.values(allUsers);
+                const senderId = action.data.senderId;
+                const userValues = action.data.users;               
+                
                 console.log("conversationId---",conversationId);
-                console.log("conversationName---",conversationName);
-                //const socketIds = Object.keys(allUsers);
                 for(let i = 0; i < userValues.length; i++){
                     if(userValues[i].userId === conversationId){
                         const socketId = userValues[i].socket;
                         console.log("private sent back", userValues[i]);
                         console.log("private sent back", socketId);
-                        console.log("private sent back", from);
+                        console.log("private sent back", senderId);
                         io.sockets.sockets[socketId].emit("action", {
                             type: "private_message",
                             data: {
                                 ...action.data,
-                                conversationId: from
+                                conversationId: senderId
                             }
                         });
                         break;
@@ -164,13 +88,13 @@ io.on("connection", socket =>{
                 break;
             case "server/user_login":
                 try{
-                const username = action.data;
-                console.log("Call for new users list111....");
-                const response = await getAllRegisteredUsers(username, socket.id);
-                console.log("Call for new users list222....");
-                allUsers = JSON.parse(response);
-                allUsers[username].socket = socket.id;
-                users1 = Object.values(allUsers);
+                // const username = action.data;
+                // console.log("Call for new users list111....");
+                // const response = await getAllRegisteredUsers(username, socket.id);
+                // console.log("Call for new users list222....");
+                // allUsers = JSON.parse(response);
+                // allUsers[username].socket = socket.id;
+                // users1 = Object.values(allUsers);
                                 
                 //io.emit("action",{type:"users_online", data: users1, chatconversations: allUsers[username].userId});
                 }catch(ex){
