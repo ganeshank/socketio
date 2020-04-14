@@ -60,7 +60,8 @@ io.on("connection", socket =>{
                 allUsers = action.data.allUsers;
                 users1 = Object.values(action.data.allUsers);
                 io.emit("action",{type:"users_online", data: users1});
-                socket.emit("action", {type: "self_user", data: action.data.selfUser});
+                socket.emit("action", {type: "self_user", data: allUsers[action.data.username]});
+                socket.emit("action", {type: "login_flag", data: false});
                 // io.emit vs socket.emit (io used when distribute to all and socket for current user only)
                 break;                
             case "server/private_message":
@@ -86,21 +87,6 @@ io.on("connection", socket =>{
                     }
                 }
                 break;
-            case "server/user_login":
-                try{
-                // const username = action.data;
-                // console.log("Call for new users list111....");
-                // const response = await getAllRegisteredUsers(username, socket.id);
-                // console.log("Call for new users list222....");
-                // allUsers = JSON.parse(response);
-                // allUsers[username].socket = socket.id;
-                // users1 = Object.values(allUsers);
-                                
-                //io.emit("action",{type:"users_online", data: users1, chatconversations: allUsers[username].userId});
-                }catch(ex){
-                    console.log("EEEEE--", ex)
-                }
-            break;
             case "server/user_signup":
                 console.log("A new user signedup.......");
                 
@@ -125,6 +111,7 @@ io.on("connection", socket =>{
                         console.log("Updated for user--", allUsers[attributename].userId);
                         users1 = Object.values(allUsers);
                         io.emit("action",{type:"users_online", data: users1});
+                        //socket.emit("action",{type:"assigntoken", data: null});
                         break;
                     }
                 }
