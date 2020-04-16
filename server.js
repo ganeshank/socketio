@@ -67,7 +67,7 @@ io.on("connection", socket =>{
             case "server/private_message":
                 const conversationId = action.data.conversationId;  
                 const senderId = action.data.senderId;
-                const userValues = action.data.users;               
+                const userValues = users1;               
                 
                 console.log("conversationId---",conversationId);
                 for(let i = 0; i < userValues.length; i++){
